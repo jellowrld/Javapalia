@@ -1,0 +1,88 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+
+public class Main {
+    private static boolean enabled = false;
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Auto-clicking Status");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(200, 100);
+        frame.setLayout(new FlowLayout());
+
+        JLabel statusLabel = new JLabel("Auto-clicking disabled");
+
+        JButton toggleButton = new JButton("Toggle Auto-clicking");
+        toggleButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enabled = !enabled;
+                if (enabled) {
+                    statusLabel.setText("Auto-clicking enabled");
+                } else {
+                    statusLabel.setText("Auto-clicking disabled");
+                }
+            }
+        });
+
+        frame.add(toggleButton);
+        frame.add(statusLabel);
+        frame.setVisible(true);
+
+        try {
+            Robot robot = new Robot();
+            Rectangle area = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+
+            boolean colorWasFound = false;
+
+            while (true) {
+                if (enabled) {
+                    // Capture screen
+                    BufferedImage screen = robot.createScreenCapture(area);
+
+                    // Define the center square area
+                    int centerX = (screen.getWidth() / 2) - 1;
+                    int centerY = (screen.getHeight() / 2) - 1;
+                    int squareSize = 2;
+
+                    // Get the color of each pixel in the center square area
+                    boolean foundColor = false;
+                    for (int y = centerY; y < centerY + squareSize; y++) {
+                        for (int x = centerX; x < centerX + squareSize; x++) {
+                            Color pixelColor = new Color(screen.getRGB(x, y));
+                            if (pixelColor.getRGB() == Color.GREEN.getRGB()) {
+                                foundColor = true;
+                                break;
+                            }
+                        }
+                        if (foundColor) {
+                            break;
+                        }
+                    }
+
+                    if (foundColor) {
+                        colorWasFound = true;
+                        System.out.println("Color #00ff00 found in the 2x2 square. Clicking...");
+                        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                        Thread.sleep(100); // Adjust delay as needed
+                    } else {
+                        if (colorWasFound) {
+                            // Color was found but now it's gone, press F key
+                            robot.keyPress(KeyEvent.VK_F);
+                            robot.keyRelease(KeyEvent.VK_F);
+                            colorWasFound = false;
+                            System.out.println("Color #00ff00 not found in the 2x2 square. Pressing F key.");
+                        }
+                    }
+                }
+                Thread.sleep(100); // Adjust delay as needed
+            }
+
+        } catch (AWTException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
